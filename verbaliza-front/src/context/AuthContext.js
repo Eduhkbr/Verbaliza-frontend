@@ -1,5 +1,5 @@
-import React, { createContext, useState, useContext } from 'react';
-import { post } from '../services/api';
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import api from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -8,21 +8,36 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
 
     const login = async (email, password) => {
-        const response = await post('/login', { email, password });
-        setUser(response.user);
-        setToken(response.access_token);
-        localStorage.setItem('authToken', response.access_token);
+        const response = await api.post('/login', { email, password });
+        const { user, access_token: apiToken } = response.data;
+
+        setUser(user);
+        setToken(apiToken);
+        localStorage.setItem('authToken', apiToken);
+        api.defaults.headers.common['Authorization'] = `Bearer ${apiToken}`;
     };
 
     const register = async (name, email, password) => {
-        await post('/register', { name, email, password });
+        await api.post('/register', { name, email, password, password_confirmation: password });
     };
 
     const logout = () => {
-        setUser(null);
-        setToken(null);
-        localStorage.removeItem('authToken');
+        // Limpa o estado e o localStorage
+        api.post('/logout').finally(() => {
+            setUser(null);
+            setToken(null);
+            localStorage.removeItem('authToken');
+            delete api.defaults.headers.common['Authorization'];
+        });
     };
+
+    useEffect(() => {
+        const storedToken = localStorage.getItem('authToken');
+        if (storedToken) {
+            api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+        }
+    }, []);
+
 
     return (
         <AuthContext.Provider value={{ token, user, login, register, logout }}>

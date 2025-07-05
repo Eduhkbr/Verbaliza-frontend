@@ -1,28 +1,20 @@
-const API_URL = 'http://127.0.0.1:8000/api'; // URL do seu servidor Laravel (php artisan serve)
+import axios from 'axios';
 
-/**
- * Função genérica para fazer requisições POST para a nossa API.
- * @param {string} endpoint - O endpoint da API (ex: '/login').
- * @param {object} data - O corpo da requisição.
- * @returns {Promise<any>} - A resposta da API em formato JSON.
- */
-export const post = async (endpoint, data) => {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-        },
-        body: JSON.stringify(data),
-    });
+const api = axios.create({
+    baseURL: 'http://127.0.0.1:8000/api',
+});
 
-    // Se a resposta não for 'ok' (ex: erro 401, 422, 500),
-    // lemos a mensagem de erro da API e lançamos uma exceção.
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Ocorreu um erro na requisição.');
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
     }
+);
 
-    // Se a resposta for bem-sucedida, retornamos os dados.
-    return response.json();
-};
+export default api;
