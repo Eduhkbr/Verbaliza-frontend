@@ -6,28 +6,36 @@ import EditorPage from './pages/EditorPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 
-function PrivateRoute({ children }) {
+function PrivateRoute() {
     const { token } = useAuth();
-    return token ? children : <Navigate to="/login" />;
+    return token ? <MainLayout /> : <Navigate to="/login" />;
 }
 
 function AppRoutes() {
+    const { token, loading } = useAuth();
+    if (loading) {
+        return <div className="flex justify-center items-center h-screen">A carregar aplicação...</div>;
+    }
+
     return (
         <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/login" element={!token ? <LoginPage /> : <Navigate to="/dashboard" />} />
             <Route
-                path="/"
+                path="/register"
                 element={
-                    <PrivateRoute>
-                        <MainLayout />
-                    </PrivateRoute>
+                    !token ? (
+                        <RegisterPage />
+                    ) : (
+                        <Navigate to="/dashboard" />
+                    )
                 }
-            >
-                <Route index element={<Navigate to="/dashboard" />} />
-                <Route path="dashboard" element={<DashboardPage />} />
-                <Route path="project/:projectId/editor" element={<EditorPage />} />
+            />
+            <Route element={<PrivateRoute />}>
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/editor/:projectId" element={<EditorPage />} />
             </Route>
+
+            <Route path="*" element={<Navigate to={token ? "/dashboard" : "/login"} />} />
         </Routes>
     );
 }
