@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom';
 
-function EditorPage() {
+export default function EditorPage() {
     const { projectId } = useParams();
     return (
         <div>
